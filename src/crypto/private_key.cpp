@@ -62,11 +62,13 @@ namespace fc { namespace crypto {
    template<typename Data>
    string to_wif( const Data& secret )
    {
-      const size_t size_of_data_to_hash = sizeof(typename Data::data_type) + 1;
+      const size_t size_of_data_to_hash = sizeof(typename Data::data_type) + 2;
       const size_t size_of_hash_bytes = 4;
       char data[size_of_data_to_hash + size_of_hash_bytes];
       data[0] = (char)0x80; // this is the Bitcoin MainNet code
       memcpy(&data[1], (const char*)&secret.serialize(), sizeof(typename Data::data_type));
+      // BTC compressed flag. TO DO: be compliant to uncompressed pubkey.
+      data[33] = (char)0x01;      
       sha256 digest = sha256::hash(data, size_of_data_to_hash);
       digest = sha256::hash(digest);
       memcpy(data + size_of_data_to_hash, (char*)&digest, size_of_hash_bytes);
@@ -78,7 +80,12 @@ namespace fc { namespace crypto {
    {
       auto wif_bytes = from_base58(wif_key);
       FC_ASSERT(wif_bytes.size() >= 5);
-      auto key_bytes = vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4);
+      std::vector<char> key_bytes;
+      if (wif_bytes[0] == 'K' || wif_bytes[0] == 'L') {
+          key_bytes = std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 5);
+      } else {
+          key_bytes = std::vector<char>(wif_bytes.begin() + 1, wif_bytes.end() - 4);
+      }
       fc::sha256 check = fc::sha256::hash(wif_bytes.data(), wif_bytes.size() - 4);
       fc::sha256 check2 = fc::sha256::hash(check);
 

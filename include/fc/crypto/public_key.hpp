@@ -34,6 +34,8 @@ namespace fc { namespace crypto {
          explicit public_key(const string& base58str);
          explicit operator string() const;
 
+         std::string to_addr() const;
+         
       private:
          storage_type _storage;
 

@@ -1,6 +1,7 @@
 #include <fc/crypto/public_key.hpp>
 #include <fc/crypto/common.hpp>
 #include <fc/exception/exception.hpp>
+#include <fc/crypto/base58.hpp>
 
 namespace fc { namespace crypto {
 
@@ -78,6 +79,20 @@ namespace fc { namespace crypto {
       } else {
          return std::string(config::public_key_base_prefix) + "_" + data_str;
       }
+   }
+
+   std::string public_key::to_addr() const
+   {
+       auto raw = _storage.visit(str_visitor<storage_type>());
+       auto tmp = fc::ripemd160::hash(fc::sha256::hash(raw));
+       std::vector<unsigned char> CKeyID(tmp.data(),tmp.data()+tmp.data_size());
+       std::vector<unsigned char> vchPrefix = std::vector<unsigned char>(1,0);
+       vchPrefix.insert(vchPrefix.end(), CKeyID.begin(), CKeyID.end());
+        //     add 4-byte hash check to the end
+       std::vector<unsigned char> vchCheck(vchPrefix);
+       uint256 hash = fc::sha256::hash(fc::sha256::hash(string(vchCheck.begin(), vchCheck.end())));
+       vchCheck.insert(vchCheck.end(),hash.data(),hash.data()+4);
+       return fc::to_base58(vchCheck);
    }
 
    std::ostream& operator<<(std::ostream& s, const public_key& k) {

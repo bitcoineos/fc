@@ -105,6 +105,15 @@ namespace fc { namespace crypto {
    };
 
    template<typename Storage>
+   struct str_visitor : public fc::visitor<std::string> {
+      template< typename KeyType >
+      std::string operator()( const KeyType& key ) const {
+
+         return string((const char *)&key.serialize(),key.serialize().size());
+      }
+   };
+
+   template<typename Storage>
    struct eq_comparator {
       struct visitor : public fc::visitor<bool> {
          visitor(const Storage &b)
